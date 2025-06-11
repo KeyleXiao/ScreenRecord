@@ -1,234 +1,145 @@
-import sys
+import tkinter as tk
+from tkinter import filedialog, messagebox
 from pathlib import Path
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QPushButton, QFileDialog, QMessageBox, QDialog, QFormLayout,
-    QSpinBox, QComboBox, QLineEdit, QLabel, QSystemTrayIcon, QMenu,
-    QCheckBox, QStyle
-)
-from PySide6.QtGui import QIcon, QAction, QShortcut, QKeySequence
-from PySide6.QtCore import Qt
 
 from settings import Settings
 from recorder import RecorderThread
 from utils import take_screenshot, timestamp_filename, video_to_gif, select_region
 from editor import ScreenshotEditor
 
-class SettingsDialog(QDialog):
-    def __init__(self, settings: Settings, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('设置')
+
+class SettingsDialog(tk.Toplevel):
+    def __init__(self, settings: Settings, master=None):
+        super().__init__(master)
         self.settings = settings
-        layout = QFormLayout(self)
-        self.path_edit = QLineEdit(self.settings.save_path)
-        browse_btn = QPushButton('浏览')
-        browse_btn.clicked.connect(self.browse)
-        path_layout = QVBoxLayout()
-        path_layout.addWidget(self.path_edit)
-        path_layout.addWidget(browse_btn)
-        container = QWidget()
-        container.setLayout(path_layout)
-        layout.addRow('保存路径:', container)
-
-        self.format_combo = QComboBox()
-        self.format_combo.addItems(['mp4', 'gif'])
-        self.format_combo.setCurrentText(self.settings.output_format)
-        layout.addRow('默认格式:', self.format_combo)
-
-        self.fps_spin = QSpinBox()
-        self.fps_spin.setRange(1, 60)
-        self.fps_spin.setValue(self.settings.gif_fps)
-        layout.addRow('GIF 帧率:', self.fps_spin)
-
-        self.start_check = QCheckBox('启动时最小化到托盘')
-        self.start_check.setChecked(self.settings.start_minimized)
-        layout.addRow(self.start_check)
-
-        btn = QPushButton('保存')
-        btn.clicked.connect(self.accept)
-        layout.addWidget(btn)
+        self.title("设置")
+        self.resizable(False, False)
+        tk.Label(self, text="保存路径:").grid(row=0, column=0, sticky="e")
+        self.path_var = tk.StringVar(value=self.settings.save_path)
+        tk.Entry(self, textvariable=self.path_var, width=40).grid(row=0, column=1)
+        tk.Button(self, text="浏览", command=self.browse).grid(row=0, column=2)
+        tk.Label(self, text="默认格式:").grid(row=1, column=0, sticky="e")
+        self.format_var = tk.StringVar(value=self.settings.output_format)
+        tk.OptionMenu(self, self.format_var, "mp4", "gif").grid(row=1, column=1, columnspan=2, sticky="w")
+        tk.Label(self, text="GIF 帧率:").grid(row=2, column=0, sticky="e")
+        self.fps_var = tk.IntVar(value=self.settings.gif_fps)
+        tk.Spinbox(self, from_=1, to=60, textvariable=self.fps_var, width=5).grid(row=2, column=1, sticky="w")
+        self.start_var = tk.BooleanVar(value=self.settings.start_minimized)
+        tk.Checkbutton(self, text="启动时最小化", variable=self.start_var).grid(row=3, column=0, columnspan=3, sticky="w")
+        tk.Button(self, text="保存", command=self.on_ok).grid(row=4, column=0, columnspan=3, pady=5)
 
     def browse(self):
-        path = QFileDialog.getExistingDirectory(self, '选择保存目录', self.settings.save_path)
+        path = filedialog.askdirectory(initialdir=self.settings.save_path)
         if path:
-            self.path_edit.setText(path)
+            self.path_var.set(path)
 
-    def accept(self):
-        self.settings.save_path = self.path_edit.text()
-        self.settings.output_format = self.format_combo.currentText()
-        self.settings.gif_fps = self.fps_spin.value()
-        self.settings.start_minimized = self.start_check.isChecked()
+    def on_ok(self):
+        self.settings.save_path = self.path_var.get()
+        self.settings.output_format = self.format_var.get()
+        self.settings.gif_fps = int(self.fps_var.get())
+        self.settings.start_minimized = self.start_var.get()
         self.settings.save()
-        super().accept()
+        self.destroy()
 
 
-class GifExportDialog(QDialog):
-    def __init__(self, parent=None, default_fps: int = 10):
-        super().__init__(parent)
-        self.setWindowTitle('导出 GIF')
-        layout = QFormLayout(self)
-        self.fps_spin = QSpinBox()
-        self.fps_spin.setRange(1, 60)
-        self.fps_spin.setValue(default_fps)
-        layout.addRow('帧率:', self.fps_spin)
-        ok_btn = QPushButton('导出')
-        ok_btn.clicked.connect(self.accept)
-        layout.addWidget(ok_btn)
+class GifExportDialog(tk.Toplevel):
+    def __init__(self, master=None, default_fps: int = 10):
+        super().__init__(master)
+        self.title("导出 GIF")
+        tk.Label(self, text="帧率:").pack(side="left")
+        self.fps_var = tk.IntVar(value=default_fps)
+        tk.Spinbox(self, from_=1, to=60, textvariable=self.fps_var, width=5).pack(side="left")
+        tk.Button(self, text="导出", command=self.destroy).pack(side="left")
 
     def fps(self) -> int:
-        return self.fps_spin.value()
+        return int(self.fps_var.get())
 
-class MainWindow(QMainWindow):
+
+class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Screen Recorder')
-        self.resize(500, 80)
+        self.title("Screen Recorder")
         self.settings = Settings.load()
+        self.geometry("500x80")
+        self.record_btn = tk.Button(self, text="开始录制", command=self.start_record)
+        self.record_btn.pack(side="left", padx=5, pady=10)
+        self.stop_btn = tk.Button(self, text="停止", command=self.stop_record, state="disabled")
+        self.stop_btn.pack(side="left", padx=5)
+        tk.Button(self, text="截图", command=self.take_shot).pack(side="left", padx=5)
+        tk.Button(self, text="设置", command=self.open_settings).pack(side="left", padx=5)
+        tk.Button(self, text="退出", command=self.exit_app).pack(side="left", padx=5)
+        self.thread: RecorderThread | None = None
+        if self.settings.start_minimized:
+            self.withdraw()
 
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout = QHBoxLayout(central)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(6)
-
-        self.record_btn = QPushButton('🎥 开始录制')
-        self.record_btn.clicked.connect(self.start_record)
-        layout.addWidget(self.record_btn)
-
-        self.stop_btn = QPushButton('停止')
-        self.stop_btn.clicked.connect(self.stop_record)
-        self.stop_btn.setEnabled(False)
-        layout.addWidget(self.stop_btn)
-
-        shot_btn = QPushButton('📸 截图')
-        shot_btn.clicked.connect(self.take_shot)
-        layout.addWidget(shot_btn)
-
-        set_btn = QPushButton('设置')
-        set_btn.clicked.connect(self.open_settings)
-        layout.addWidget(set_btn)
-
-        exit_btn = QPushButton('退出')
-        exit_btn.clicked.connect(self.exit_app)
-        layout.addWidget(exit_btn)
-
-        self.shortcut_shot = QShortcut(QKeySequence('Ctrl+Shift+S'), self)
-        self.shortcut_shot.activated.connect(self.take_shot)
-
-        # Use a basic built-in icon so the tray icon is always valid
-        tray_icon = QApplication.style().standardIcon(QStyle.SP_ComputerIcon)
-        self.tray = QSystemTrayIcon(tray_icon, self)
-        tray_menu = QMenu()
-        act_restore = QAction('显示窗口', self)
-        # Restore the main window when the tray icon action is triggered
-        act_restore.triggered.connect(self.showNormal)
-        tray_menu.addAction(act_restore)
-        act_shot = QAction('快速截图', self)
-        act_shot.triggered.connect(self.take_shot)
-        tray_menu.addAction(act_shot)
-        act_quit = QAction('退出', self)
-        act_quit.triggered.connect(self.exit_app)
-        tray_menu.addAction(act_quit)
-        self.tray.setContextMenu(tray_menu)
-        self.tray.setToolTip('Screen Recorder')
-        self.tray.activated.connect(self.on_tray_activated)
-        self.tray.show()
-
-        self.thread = None
-        self.apply_style()
-
-    def apply_style(self):
-        self.setStyleSheet(
-            """
-            QPushButton { padding:4px 12px; border-radius:6px; background:#3498db; color:white; }
-            QPushButton:hover { background:#2980b9; }
-            """
-        )
-
+    # Recording
     def start_record(self):
         region = select_region(self)
         if region is None:
             return
-
-        default = Path(self.settings.save_path) / timestamp_filename('.mp4')
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, '选择保存视频', str(default), 'MP4 Files (*.mp4)'
-        )
+        default = Path(self.settings.save_path) / timestamp_filename(".mp4")
+        file_path = filedialog.asksaveasfilename(initialfile=str(default), defaultextension=".mp4", filetypes=[("MP4", "*.mp4")])
         if not file_path:
             return
-
-        self.thread = RecorderThread(Path(file_path), region=region)
-        self.thread.finished.connect(self.record_finished)
-        self.thread.error.connect(self.record_error)
-        self.record_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
+        def on_finished(path: Path):
+            self.record_btn.config(state="normal")
+            self.stop_btn.config(state="disabled")
+            messagebox.showinfo("完成", f"录制完成: {path}")
+            if messagebox.askyesno("导出 GIF", "是否导出为 GIF?"):
+                dlg = GifExportDialog(self, self.settings.gif_fps)
+                self.wait_window(dlg)
+                gif_path = Path(path).with_suffix(".gif")
+                video_to_gif(Path(path), gif_path, dlg.fps())
+                messagebox.showinfo("GIF", f"已保存 GIF: {gif_path}")
+        def on_error(err: str):
+            self.record_btn.config(state="normal")
+            self.stop_btn.config(state="disabled")
+            messagebox.showerror("错误", err)
+        self.thread = RecorderThread(Path(file_path), region=region, on_finished=on_finished, on_error=on_error)
         self.thread.start()
-
-    def record_finished(self, path: Path):
-        self.record_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        QMessageBox.information(self, '完成', f'录制完成: {path}')
-
-        if QMessageBox.question(self, '导出 GIF', '是否导出为 GIF?') == QMessageBox.Yes:
-            dlg = GifExportDialog(self, self.settings.gif_fps)
-            if dlg.exec():
-                gif_path = path.with_suffix('.gif')
-                video_to_gif(path, gif_path, dlg.fps())
-                QMessageBox.information(self, 'GIF 导出', f'已保存 GIF: {gif_path}')
-
-    def record_error(self, err: str):
-        self.record_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        QMessageBox.warning(self, '错误', err)
+        self.record_btn.config(state="disabled")
+        self.stop_btn.config(state="normal")
 
     def stop_record(self):
         if self.thread:
             self.thread.stop()
+            self.thread = None
+            self.record_btn.config(state="normal")
+            self.stop_btn.config(state="disabled")
 
-    def on_tray_activated(self, reason):
-        if reason == QSystemTrayIcon.Trigger:
-            self.showNormal()
-
-    def exit_app(self):
-        if self.thread:
-            self.thread.stop()
-        QApplication.instance().quit()
-
+    # Screenshot
     def take_shot(self):
         region = select_region(self)
         if region is None:
             return
-
-        default = Path(self.settings.save_path) / timestamp_filename('.png')
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, '保存截图', str(default), 'PNG Files (*.png)'
-        )
+        default = Path(self.settings.save_path) / timestamp_filename(".png")
+        file_path = filedialog.asksaveasfilename(initialfile=str(default), defaultextension=".png", filetypes=[("PNG", "*.png")])
         if not file_path:
             return
-
         path = Path(file_path)
         take_screenshot(path, region)
         editor = ScreenshotEditor(path, self)
-        editor.exec()
-        QMessageBox.information(self, '截图', f'已保存截图: {path}')
+        self.wait_window(editor)
+        messagebox.showinfo("截图", f"已保存截图: {path}")
 
     def open_settings(self):
         dlg = SettingsDialog(self.settings, self)
-        if dlg.exec():
-            if self.settings.start_minimized:
-                self.hide()
-            else:
-                self.show()
+        self.wait_window(dlg)
+        if self.settings.start_minimized:
+            self.withdraw()
+        else:
+            self.deiconify()
+
+    def exit_app(self):
+        if self.thread:
+            self.thread.stop()
+        self.destroy()
 
 
 def main():
-    app = QApplication(sys.argv)
-    w = MainWindow()
-    if w.settings.start_minimized:
-        w.hide()
-    else:
-        w.show()
-    sys.exit(app.exec())
+    app = MainWindow()
+    app.mainloop()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

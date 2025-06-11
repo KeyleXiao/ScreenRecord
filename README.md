@@ -1,15 +1,14 @@
 # ScreenRecord
 
-A simple cross-platform screen recorder and screenshot tool using PySide6.
-The tray icon now uses a built-in system icon to avoid startup errors on
-platforms that require one.
+A simple cross-platform screen recorder and screenshot tool using Python's
+built-in Tkinter GUI toolkit. The previous PySide6 interface has been replaced
+for better compatibility.
 
 ## Features
 - Record screen to MP4 via ffmpeg
 - Optional GIF export with custom FPS
 - Take screenshots using `mss`
-- Edit screenshots before saving with adjustable brush size/color and text font/size
-- System tray support and screenshot hotkey (Ctrl+Shift+S)
+- Edit screenshots with a simple drawing tool
 - Basic settings saved to `config.json`
 
 ## Usage
