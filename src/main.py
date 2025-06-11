@@ -1,11 +1,18 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
+import time
 
 from settings import Settings
 from recorder import RecorderThread
 from typing import Optional
-from utils import take_screenshot, timestamp_filename, video_to_gif, select_region
+from utils import (
+    take_screenshot,
+    timestamp_filename,
+    video_to_gif,
+    select_region,
+    RecordingOverlay,
+)
 from editor import ScreenshotEditor
 
 
@@ -69,7 +76,13 @@ class MainWindow(tk.Tk):
         tk.Button(self, text="截图", command=self.take_shot).pack(side="left", padx=5)
         tk.Button(self, text="设置", command=self.open_settings).pack(side="left", padx=5)
         tk.Button(self, text="退出", command=self.exit_app).pack(side="left", padx=5)
+        self.timer_var = tk.StringVar(value="00:00")
+        self.timer_label = tk.Label(self, textvariable=self.timer_var)
+        self.timer_label.pack(side="left", padx=5)
         self.thread: Optional[RecorderThread] = None
+        self.overlay: Optional[RecordingOverlay] = None
+        self.timer_job = None
+        self.start_time = None
         if self.settings.start_minimized:
             self.withdraw()
 
@@ -82,9 +95,19 @@ class MainWindow(tk.Tk):
         file_path = filedialog.asksaveasfilename(initialfile=str(default), defaultextension=".mp4", filetypes=[("MP4", "*.mp4")])
         if not file_path:
             return
+        self.overlay = RecordingOverlay(region)
+        self.start_time = time.time()
+        self.update_timer()
         def on_finished(path: Path):
             self.record_btn.config(state="normal")
             self.stop_btn.config(state="disabled")
+            if self.overlay:
+                self.overlay.destroy()
+                self.overlay = None
+            if self.timer_job:
+                self.after_cancel(self.timer_job)
+                self.timer_job = None
+            self.timer_var.set("00:00")
             messagebox.showinfo("完成", f"录制完成: {path}")
             if messagebox.askyesno("导出 GIF", "是否导出为 GIF?"):
                 dlg = GifExportDialog(self, self.settings.gif_fps)
@@ -95,11 +118,26 @@ class MainWindow(tk.Tk):
         def on_error(err: str):
             self.record_btn.config(state="normal")
             self.stop_btn.config(state="disabled")
+            if self.overlay:
+                self.overlay.destroy()
+                self.overlay = None
+            if self.timer_job:
+                self.after_cancel(self.timer_job)
+                self.timer_job = None
+            self.timer_var.set("00:00")
             messagebox.showerror("错误", err)
         self.thread = RecorderThread(Path(file_path), region=region, on_finished=on_finished, on_error=on_error)
         self.thread.start()
         self.record_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
+
+    def update_timer(self):
+        if self.start_time is None:
+            return
+        elapsed = int(time.time() - self.start_time)
+        mins, secs = divmod(elapsed, 60)
+        self.timer_var.set(f"{mins:02d}:{secs:02d}")
+        self.timer_job = self.after(1000, self.update_timer)
 
     def stop_record(self):
         if self.thread:
@@ -107,6 +145,13 @@ class MainWindow(tk.Tk):
             self.thread = None
             self.record_btn.config(state="normal")
             self.stop_btn.config(state="disabled")
+        if self.overlay:
+            self.overlay.destroy()
+            self.overlay = None
+        if self.timer_job:
+            self.after_cancel(self.timer_job)
+            self.timer_job = None
+        self.timer_var.set("00:00")
 
     # Screenshot
     def take_shot(self):

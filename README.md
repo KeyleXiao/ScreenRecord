@@ -10,6 +10,8 @@ for better compatibility.
 - Take screenshots using `mss`
 - Edit screenshots with a simple drawing tool
 - Basic settings saved to `config.json`
+- Recording area highlighted with a red frame
+- Recording duration shown on the main window
 
 ## Usage
 ```bash
