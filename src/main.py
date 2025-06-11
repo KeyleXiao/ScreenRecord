@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
     QPushButton, QFileDialog, QMessageBox, QDialog, QFormLayout,
     QSpinBox, QComboBox, QLineEdit, QLabel, QSystemTrayIcon, QMenu,
-    QCheckBox
+    QCheckBox, QStyle
 )
 from PySide6.QtGui import QIcon, QAction, QShortcut, QKeySequence
 from PySide6.QtCore import Qt
@@ -115,7 +115,9 @@ class MainWindow(QMainWindow):
         self.shortcut_shot = QShortcut(QKeySequence('Ctrl+Shift+S'), self)
         self.shortcut_shot.activated.connect(self.take_shot)
 
-        self.tray = QSystemTrayIcon(QIcon(), self)
+        # Use a basic built-in icon so the tray icon is always valid
+        tray_icon = QApplication.style().standardIcon(QStyle.SP_ComputerIcon)
+        self.tray = QSystemTrayIcon(tray_icon, self)
         tray_menu = QMenu()
         act_restore = QAction('显示窗口', self)
         # Restore the main window when the tray icon action is triggered
