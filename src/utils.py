@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import time
 import tkinter as tk
+from typing import Optional, Tuple
 from PIL import Image
 import imageio.v2 as imageio
 import mss
@@ -29,9 +30,9 @@ class RegionSelector(tk.Toplevel):
         self.configure(background="black")
         self.canvas = tk.Canvas(self, cursor="cross", highlightthickness=0, bg="black")
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.start_pos: tuple[int, int] | None = None
-        self.rect_id: int | None = None
-        self.selected: Rect | None = None
+        self.start_pos: Optional[Tuple[int, int]] = None
+        self.rect_id: Optional[int] = None
+        self.selected: Optional[Rect] = None
         self.bind("<ButtonPress-1>", self.on_press)
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease-1>", self.on_release)
@@ -68,7 +69,7 @@ class RegionSelector(tk.Toplevel):
         self.destroy()
 
 
-def select_region(master=None) -> Rect | None:
+def select_region(master=None) -> Optional[Rect]:
     root = tk.Tk() if master is None else master
     if master is None:
         root.withdraw()
@@ -80,7 +81,7 @@ def select_region(master=None) -> Rect | None:
     return selector.selected
 
 
-def take_screenshot(path: Path, region: Rect | None = None) -> Path:
+def take_screenshot(path: Path, region: Optional[Rect] = None) -> Path:
     """Capture a screenshot optionally limited to *region*."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with mss.mss() as sct:
