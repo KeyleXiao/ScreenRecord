@@ -34,6 +34,8 @@ class RegionSelector(tk.Toplevel):
         self.start_pos: Optional[Tuple[int, int]] = None
         self.rect_id: Optional[int] = None
         self.selected: Optional[Rect] = None
+        self.button_frame: Optional[tk.Frame] = None
+        self.button_window: Optional[int] = None
         self.bind("<ButtonPress-1>", self.on_press)
         self.bind("<B1-Motion>", self.on_drag)
         self.bind("<ButtonRelease-1>", self.on_release)
@@ -50,6 +52,14 @@ class RegionSelector(tk.Toplevel):
         self.deiconify()
 
     def on_press(self, event):
+        if self.rect_id:
+            self.canvas.delete(self.rect_id)
+        if self.button_window is not None:
+            self.canvas.delete(self.button_window)
+            self.button_window = None
+        if self.button_frame is not None:
+            self.button_frame.destroy()
+            self.button_frame = None
         self.start_pos = (event.x, event.y)
         self.rect_id = self.canvas.create_rectangle(event.x, event.y, event.x, event.y, outline="red")
 
@@ -59,12 +69,31 @@ class RegionSelector(tk.Toplevel):
             self.canvas.coords(self.rect_id, x1, y1, event.x, event.y)
 
     def on_release(self, event):
-        if self.start_pos and self.rect_id:
-            x1, y1 = self.start_pos
-            x2, y2 = event.x, event.y
-            sx1, sy1 = int(round(x1 * self.scaling)), int(round(y1 * self.scaling))
-            sx2, sy2 = int(round(x2 * self.scaling)), int(round(y2 * self.scaling))
-            self.selected = Rect(min(sx1, sx2), min(sy1, sy2), abs(sx2 - sx1), abs(sy2 - sy1))
+        if not (self.start_pos and self.rect_id):
+            return
+        x1, y1 = self.start_pos
+        x2, y2 = event.x, event.y
+        ux = min(x1, x2)
+        uy = min(y1, y2)
+        uw = abs(x2 - x1)
+        uh = abs(y2 - y1)
+        sx1, sy1 = int(round(ux * self.scaling)), int(round(uy * self.scaling))
+        sx2, sy2 = int(round((ux + uw) * self.scaling)), int(round((uy + uh) * self.scaling))
+        self.selected = Rect(min(sx1, sx2), min(sy1, sy2), abs(sx2 - sx1), abs(sy2 - sy1))
+        self.show_buttons(ux + uw, uy + uh)
+
+    def show_buttons(self, x: float, y: float) -> None:
+        if self.button_window is not None:
+            self.canvas.delete(self.button_window)
+            self.button_window = None
+        if self.button_frame is not None:
+            self.button_frame.destroy()
+        self.button_frame = tk.Frame(self.canvas, bg="white")
+        tk.Button(self.button_frame, text="取消", command=self.cancel).pack(side="left")
+        tk.Button(self.button_frame, text="确认", command=self.confirm).pack(side="left")
+        self.button_window = self.canvas.create_window(x, y, anchor="se", window=self.button_frame)
+
+    def confirm(self):
         self.destroy()
 
     def cancel(self):
