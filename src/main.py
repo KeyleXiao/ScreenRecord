@@ -112,7 +112,8 @@ class MainWindow(QMainWindow):
         self.tray = QSystemTrayIcon(QIcon(), self)
         tray_menu = QMenu()
         act_restore = QAction('显示窗口', self)
-        act_restore.triggered.connect(self.show_normal)
+        # Restore the main window when the tray icon action is triggered
+        act_restore.triggered.connect(self.showNormal)
         tray_menu.addAction(act_restore)
         act_shot = QAction('快速截图', self)
         act_shot.triggered.connect(self.take_shot)
