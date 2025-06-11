@@ -23,6 +23,7 @@ class RegionSelector(tk.Toplevel):
 
     def __init__(self, master=None):
         super().__init__(master)
+        self.scaling = float(self.tk.call("tk", "scaling"))
         self.withdraw()
         self.overrideredirect(True)
         self.attributes("-fullscreen", True)
@@ -61,7 +62,9 @@ class RegionSelector(tk.Toplevel):
         if self.start_pos and self.rect_id:
             x1, y1 = self.start_pos
             x2, y2 = event.x, event.y
-            self.selected = Rect(min(x1, x2), min(y1, y2), abs(x2 - x1), abs(y2 - y1))
+            sx1, sy1 = int(round(x1 * self.scaling)), int(round(y1 * self.scaling))
+            sx2, sy2 = int(round(x2 * self.scaling)), int(round(y2 * self.scaling))
+            self.selected = Rect(min(sx1, sx2), min(sy1, sy2), abs(sx2 - sx1), abs(sy2 - sy1))
         self.destroy()
 
     def cancel(self):
