@@ -109,3 +109,36 @@ def video_to_gif(video_path: Path, gif_path: Path, fps: int = 10) -> Path:
 
 def timestamp_filename(ext: str) -> str:
     return time.strftime("%Y%m%d_%H%M%S") + ext
+
+
+class RecordingOverlay:
+    """Display a red rectangle around the recording area."""
+
+    def __init__(self, region: Rect, master=None, color: str = "red", width: int = 4):
+        self.windows = []
+        self.color = color
+        self.width = width
+        self.create_windows(region, master)
+
+    def create_windows(self, region: Rect, master=None) -> None:
+        x, y, w, h = region.x, region.y, region.width, region.height
+        # top
+        self.windows.append(self._make_win(w, self.width, x, y, master))
+        # bottom
+        self.windows.append(self._make_win(w, self.width, x, y + h - self.width, master))
+        # left
+        self.windows.append(self._make_win(self.width, h, x, y, master))
+        # right
+        self.windows.append(self._make_win(self.width, h, x + w - self.width, y, master))
+
+    def _make_win(self, w: int, h: int, x: int, y: int, master=None) -> tk.Toplevel:
+        win = tk.Toplevel(master)
+        win.overrideredirect(True)
+        win.attributes("-topmost", True)
+        win.geometry(f"{w}x{h}+{x}+{y}")
+        win.configure(background=self.color)
+        return win
+
+    def destroy(self) -> None:
+        for win in self.windows:
+            win.destroy()

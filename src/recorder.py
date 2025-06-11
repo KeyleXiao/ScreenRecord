@@ -97,13 +97,25 @@ class RecorderThread(threading.Thread):
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             self._process.wait()
+            err = self._process.stderr.read().decode("utf-8")
+            if (
+                self._process.returncode != 0
+                and sys.platform == "darwin"
+                and "Invalid device index" in err
+            ):
+                idx = cmd.index("-i") + 1
+                cmd[idx] = "0"
+                self._process = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                self._process.wait()
+                err = self._process.stderr.read().decode("utf-8")
             if self._stop_event.is_set():
                 return
             if self._process.returncode == 0:
                 if self.on_finished:
                     self.on_finished(self.output)
             else:
-                err = self._process.stderr.read().decode("utf-8")
                 if self.on_error:
                     self.on_error(err)
         except Exception as e:
