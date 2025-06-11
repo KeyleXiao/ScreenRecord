@@ -20,5 +20,6 @@ python src/main.py
 
 When you click the "Start Recording" or "Screenshot" buttons, a full-screen
 overlay with a crosshair cursor will appear. Drag to select the region you want
-to capture. The application waits for this selection before continuing, so be
-sure to draw a rectangle instead of thinking the program has frozen.
+to capture. You can press **Esc** or right-click to cancel. The application
+waits for this selection before continuing, so be sure to draw a rectangle
+instead of thinking the program has frozen.

@@ -5,7 +5,7 @@ import time
 import imageio.v2 as imageio
 from PIL import Image
 import mss
-from PySide6.QtWidgets import QDialog, QRubberBand
+from PySide6.QtWidgets import QDialog, QRubberBand, QLabel
 from PySide6.QtCore import Qt, QRect, QPoint, QSize
 
 
@@ -23,8 +23,17 @@ class RegionSelector(QDialog):
         self.origin = QPoint()
         self.rubber = QRubberBand(QRubberBand.Rectangle, self)
         self.selected: QRect | None = None
+        label = QLabel('拖动选择区域，按 Esc 或右键取消', self)
+        label.setStyleSheet(
+            'color:white;background:rgba(0,0,0,0.6);padding:4px;border-radius:4px;'
+        )
+        label.adjustSize()
+        label.move(20, 20)
 
     def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            self.reject()
+            return
         if event.button() == Qt.LeftButton:
             self.origin = event.pos()
             self.rubber.setGeometry(QRect(self.origin, QSize()))
@@ -39,6 +48,12 @@ class RegionSelector(QDialog):
         if event.button() == Qt.LeftButton:
             self.selected = self.rubber.geometry()
             self.accept()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.reject()
+        else:
+            super().keyPressEvent(event)
 
 
 def select_region(parent=None) -> QRect | None:
