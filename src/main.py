@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QWidget,
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
     QPushButton, QFileDialog, QMessageBox, QDialog, QFormLayout,
     QSpinBox, QComboBox, QLineEdit, QLabel, QSystemTrayIcon, QMenu,
     QCheckBox
