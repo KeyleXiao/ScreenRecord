@@ -17,3 +17,8 @@ platforms that require one.
 pip install -r requirements.txt
 python src/main.py
 ```
+
+When you click the "Start Recording" or "Screenshot" buttons, a full-screen
+overlay with a crosshair cursor will appear. Drag to select the region you want
+to capture. The application waits for this selection before continuing, so be
+sure to draw a rectangle instead of thinking the program has frozen.
