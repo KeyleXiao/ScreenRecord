@@ -114,7 +114,7 @@ def timestamp_filename(ext: str) -> str:
 class RecordingOverlay:
     """Display a red rectangle around the recording area."""
 
-    def __init__(self, region: Rect, master=None, color: str = "red", width: int = 4):
+    def __init__(self, region: Rect, master=None, color: str = "red", width: int = 5):
         self.windows = []
         self.color = color
         self.width = width

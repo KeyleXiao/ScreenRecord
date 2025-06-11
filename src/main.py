@@ -79,7 +79,10 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.title("Screen Recorder")
         self.settings = Settings.load()
-        self.geometry("520x60")
+        # Reduce height slightly for a sleeker look
+        self.geometry("520x50")
+        # Allow width resizing but lock the height
+        self.resizable(True, False)
 
         top = tk.Frame(self)
         top.pack(fill="both", expand=True)
@@ -88,22 +91,44 @@ class MainWindow(tk.Tk):
         btn_frame.pack(side="left", fill="both", expand=True)
 
         self.record_btn = tk.Button(
-            btn_frame, text="⏺ 开始录制", command=self.start_record
+            btn_frame,
+            text="⏺ 开始录制",
+            command=self.start_record,
+            borderwidth=0,
         )
         self.record_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
         self.stop_btn = tk.Button(
-            btn_frame, text="⏹ 停止", command=self.stop_record, state="disabled"
+            btn_frame,
+            text="⏹ 停止",
+            command=self.stop_record,
+            state="disabled",
+            borderwidth=0,
         )
         self.stop_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
-        tk.Button(btn_frame, text="📸 截图", command=self.take_shot).pack(
+        tk.Button(
+            btn_frame,
+            text="📸 截图",
+            command=self.take_shot,
+            borderwidth=0,
+        ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
-        tk.Button(btn_frame, text="⚙ 设置", command=self.open_settings).pack(
+        tk.Button(
+            btn_frame,
+            text="⚙ 设置",
+            command=self.open_settings,
+            borderwidth=0,
+        ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
-        tk.Button(btn_frame, text="❌ 退出", command=self.exit_app).pack(
+        tk.Button(
+            btn_frame,
+            text="❌ 退出",
+            command=self.exit_app,
+            borderwidth=0,
+        ).pack(
             side="left", fill="both", expand=True, pady=1
         )
 
@@ -126,7 +151,7 @@ class MainWindow(tk.Tk):
         file_path = filedialog.asksaveasfilename(initialfile=str(default), defaultextension=".mp4", filetypes=[("MP4", "*.mp4")])
         if not file_path:
             return
-        self.overlay = RecordingOverlay(region)
+        self.overlay = RecordingOverlay(region, master=self)
         self.start_time = time.time()
         self.update_timer()
         def on_finished(path: Path):
