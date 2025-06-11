@@ -11,7 +11,7 @@ from PySide6.QtCore import Qt
 
 from settings import Settings
 from recorder import RecorderThread
-from utils import take_screenshot, timestamp_filename, video_to_gif
+from utils import take_screenshot, timestamp_filename, video_to_gif, select_region
 from editor import ScreenshotEditor
 
 class SettingsDialog(QDialog):
@@ -144,11 +144,18 @@ class MainWindow(QMainWindow):
         )
 
     def start_record(self):
-        save_dir = Path(self.settings.save_path)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        filename = timestamp_filename('.mp4')
-        output = save_dir / filename
-        self.thread = RecorderThread(output)
+        region = select_region(self)
+        if region is None:
+            return
+
+        default = Path(self.settings.save_path) / timestamp_filename('.mp4')
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, '选择保存视频', str(default), 'MP4 Files (*.mp4)'
+        )
+        if not file_path:
+            return
+
+        self.thread = RecorderThread(Path(file_path), region=region)
         self.thread.finished.connect(self.record_finished)
         self.thread.error.connect(self.record_error)
         self.record_btn.setEnabled(False)
@@ -186,10 +193,19 @@ class MainWindow(QMainWindow):
         QApplication.instance().quit()
 
     def take_shot(self):
-        save_dir = Path(self.settings.save_path)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        path = save_dir / timestamp_filename('.png')
-        take_screenshot(path)
+        region = select_region(self)
+        if region is None:
+            return
+
+        default = Path(self.settings.save_path) / timestamp_filename('.png')
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, '保存截图', str(default), 'PNG Files (*.png)'
+        )
+        if not file_path:
+            return
+
+        path = Path(file_path)
+        take_screenshot(path, region)
         editor = ScreenshotEditor(path, self)
         editor.exec()
         QMessageBox.information(self, '截图', f'已保存截图: {path}')
