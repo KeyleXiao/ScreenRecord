@@ -82,17 +82,23 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Screen Recorder')
-        self.resize(400, 300)
+        self.resize(500, 80)
         self.settings = Settings.load()
 
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        layout.setSpacing(10)
+        layout = QHBoxLayout(central)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(6)
 
         self.record_btn = QPushButton('🎥 开始录制')
         self.record_btn.clicked.connect(self.start_record)
         layout.addWidget(self.record_btn)
+
+        self.stop_btn = QPushButton('停止')
+        self.stop_btn.clicked.connect(self.stop_record)
+        self.stop_btn.setEnabled(False)
+        layout.addWidget(self.stop_btn)
 
         shot_btn = QPushButton('📸 截图')
         shot_btn.clicked.connect(self.take_shot)
@@ -126,18 +132,13 @@ class MainWindow(QMainWindow):
         self.tray.activated.connect(self.on_tray_activated)
         self.tray.show()
 
-        self.stop_btn = QPushButton('停止')
-        self.stop_btn.clicked.connect(self.stop_record)
-        self.stop_btn.setEnabled(False)
-        layout.insertWidget(1, self.stop_btn)  # after record button
-
         self.thread = None
         self.apply_style()
 
     def apply_style(self):
         self.setStyleSheet(
             """
-            QPushButton { padding:8px; border-radius:6px; background:#3498db; color:white; }
+            QPushButton { padding:4px 12px; border-radius:6px; background:#3498db; color:white; }
             QPushButton:hover { background:#2980b9; }
             """
         )
