@@ -80,7 +80,7 @@ class MainWindow(tk.Tk):
         self.title("Screen Recorder")
         self.settings = Settings.load()
         # Reduce height slightly for a sleeker look
-        self.geometry("520x50")
+        self.geometry("520x40")
         # Allow width resizing but lock the height
         self.resizable(True, False)
 
@@ -95,6 +95,8 @@ class MainWindow(tk.Tk):
             text="⏺ 开始录制",
             command=self.start_record,
             borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
         )
         self.record_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
@@ -104,6 +106,8 @@ class MainWindow(tk.Tk):
             command=self.stop_record,
             state="disabled",
             borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
         )
         self.stop_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
@@ -112,6 +116,8 @@ class MainWindow(tk.Tk):
             text="📸 截图",
             command=self.take_shot,
             borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
@@ -120,6 +126,8 @@ class MainWindow(tk.Tk):
             text="⚙ 设置",
             command=self.open_settings,
             borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
@@ -128,6 +136,8 @@ class MainWindow(tk.Tk):
             text="❌ 退出",
             command=self.exit_app,
             borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, pady=1
         )
