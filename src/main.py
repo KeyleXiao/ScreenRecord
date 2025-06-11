@@ -4,6 +4,7 @@ from pathlib import Path
 
 from settings import Settings
 from recorder import RecorderThread
+from typing import Optional
 from utils import take_screenshot, timestamp_filename, video_to_gif, select_region
 from editor import ScreenshotEditor
 
@@ -68,7 +69,7 @@ class MainWindow(tk.Tk):
         tk.Button(self, text="截图", command=self.take_shot).pack(side="left", padx=5)
         tk.Button(self, text="设置", command=self.open_settings).pack(side="left", padx=5)
         tk.Button(self, text="退出", command=self.exit_app).pack(side="left", padx=5)
-        self.thread: RecorderThread | None = None
+        self.thread: Optional[RecorderThread] = None
         if self.settings.start_minimized:
             self.withdraw()
 

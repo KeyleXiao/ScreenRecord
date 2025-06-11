@@ -5,12 +5,13 @@ import threading
 from pathlib import Path
 
 from utils import Rect
+from typing import Optional
 
 
 class RecorderThread(threading.Thread):
     """Simple ffmpeg based screen recorder running in a thread."""
 
-    def __init__(self, output: Path, fps: int = 30, region: Rect | None = None,
+    def __init__(self, output: Path, fps: int = 30, region: Optional[Rect] = None,
                  on_finished=None, on_error=None):
         super().__init__(daemon=True)
         self.output = output
