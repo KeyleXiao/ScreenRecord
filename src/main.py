@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt
 from settings import Settings
 from recorder import RecorderThread
 from utils import take_screenshot, timestamp_filename, video_to_gif
+from editor import ScreenshotEditor
 
 class SettingsDialog(QDialog):
     def __init__(self, settings: Settings, parent=None):
@@ -187,6 +188,8 @@ class MainWindow(QMainWindow):
         save_dir.mkdir(parents=True, exist_ok=True)
         path = save_dir / timestamp_filename('.png')
         take_screenshot(path)
+        editor = ScreenshotEditor(path, self)
+        editor.exec()
         QMessageBox.information(self, '截图', f'已保存截图: {path}')
 
     def open_settings(self):
