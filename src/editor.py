@@ -12,8 +12,7 @@ class DraggableTextEdit(QTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet(
-            "background: transparent; border: 2px solid red; color: red;")
+        self.setStyleSheet("background: transparent; border: 2px solid red; color: red;")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setFrameStyle(QTextEdit.NoFrame)
         self.setMinimumSize(40, 20)
@@ -58,6 +57,7 @@ class ScreenshotEditor(QDialog):
         self.overlay = QPixmap(self.base_pixmap.size())
         self.overlay.fill(Qt.transparent)
         self.setFixedSize(self.base_pixmap.size())
+        self.setMouseTracking(True)
         self.last_point: QPoint | None = None
         self.drawing = False
         self.mode = 'draw'
@@ -72,6 +72,8 @@ class ScreenshotEditor(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         self.label = QLabel()
         self.label.setPixmap(self._compose())
+        self.label.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.label.setMouseTracking(True)
         layout.addWidget(self.label)
 
         btn_layout = QHBoxLayout()
@@ -142,7 +144,11 @@ class ScreenshotEditor(QDialog):
                 te = DraggableTextEdit(self.label)
                 te.setFont(QFont(self.font_family, self.text_size))
                 te.setGeometry(QRect(event.position().toPoint(), te.size()))
+                te.setStyleSheet(
+                    f"background: transparent; border: 2px solid {self.text_color.name()}; color: {self.text_color.name()};"
+                )
                 te.show()
+                te.setFocus()
                 self.text_edits.append(te)
                 self.mode = 'draw'
         super().mousePressEvent(event)
@@ -173,6 +179,7 @@ class ScreenshotEditor(QDialog):
             pos = te.pos()
             rect = QRect(pos, te.size())
             painter.drawText(rect, Qt.AlignLeft | Qt.AlignTop, te.toPlainText())
+            te.hide()
         painter.end()
         final = self._compose()
         final.save(str(self.image_path))

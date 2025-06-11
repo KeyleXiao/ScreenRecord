@@ -3,3 +3,4 @@ ffmpeg-python
 mss
 Pillow
 imageio
+imageio-ffmpeg
