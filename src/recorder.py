@@ -1,4 +1,5 @@
 import sys
+import shutil
 import subprocess
 from pathlib import Path
 from PySide6.QtCore import QThread, Signal
@@ -15,6 +16,9 @@ class RecorderThread(QThread):
 
     def run(self):
         self.output.parent.mkdir(parents=True, exist_ok=True)
+        if not shutil.which('ffmpeg'):
+            self.error.emit('ffmpeg not found. Please install ffmpeg and ensure it is in PATH.')
+            return
         # Basic cross-platform ffmpeg screen capture commands
         if sys.platform.startswith('win'):
             cmd = [

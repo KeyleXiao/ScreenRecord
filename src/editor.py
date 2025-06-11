@@ -1,10 +1,51 @@
 from pathlib import Path
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout,
-    QInputDialog, QSlider, QComboBox, QFontComboBox, QSpinBox
+    QSlider, QComboBox, QFontComboBox, QSpinBox, QTextEdit
 )
 from PySide6.QtGui import QPixmap, QPainter, QPen, QColor, QFont
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import Qt, QPoint, QRect
+
+
+class DraggableTextEdit(QTextEdit):
+    """Transparent text edit that can be moved and resized by dragging."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(
+            "background: transparent; border: 2px solid red; color: red;")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFrameStyle(QTextEdit.NoFrame)
+        self.setMinimumSize(40, 20)
+        self._drag = False
+        self._resize = False
+        self._drag_pos = QPoint()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            margin = 6
+            if (self.width() - event.pos().x() < margin and
+                    self.height() - event.pos().y() < margin):
+                self._resize = True
+            else:
+                self._drag = True
+                self._drag_pos = event.globalPosition().toPoint() - self.pos()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._drag:
+            new_pos = event.globalPosition().toPoint() - self._drag_pos
+            self.move(new_pos)
+        elif self._resize:
+            new_size = event.pos()
+            self.resize(max(new_size.x(), 40), max(new_size.y(), 20))
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._drag = False
+        self._resize = False
+        super().mouseReleaseEvent(event)
 
 class ScreenshotEditor(QDialog):
     """Simple dialog to draw and add text on a screenshot."""
@@ -20,7 +61,7 @@ class ScreenshotEditor(QDialog):
         self.last_point: QPoint | None = None
         self.drawing = False
         self.mode = 'draw'
-        self.pending_text = ''
+        self.text_edits: list[DraggableTextEdit] = []
         self.pen_width = 2
         self.pen_color = QColor('red')
         self.text_color = QColor('red')
@@ -28,6 +69,7 @@ class ScreenshotEditor(QDialog):
         self.font_family = QFont().family()
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.label = QLabel()
         self.label.setPixmap(self._compose())
         layout.addWidget(self.label)
@@ -89,10 +131,7 @@ class ScreenshotEditor(QDialog):
         self.mode = 'draw'
 
     def _prepare_text(self):
-        text, ok = QInputDialog.getText(self, '文字', '输入文字:')
-        if ok and text:
-            self.pending_text = text
-            self.mode = 'text'
+        self.mode = 'text'
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -100,16 +139,12 @@ class ScreenshotEditor(QDialog):
                 self.drawing = True
                 self.last_point = event.position().toPoint()
             elif self.mode == 'text':
-                painter = QPainter(self.overlay)
-                pen = QPen(self.text_color)
-                painter.setPen(pen)
-                font = QFont(self.font_family, self.text_size)
-                painter.setFont(font)
-                painter.drawText(event.position().toPoint(), self.pending_text)
-                painter.end()
+                te = DraggableTextEdit(self.label)
+                te.setFont(QFont(self.font_family, self.text_size))
+                te.setGeometry(QRect(event.position().toPoint(), te.size()))
+                te.show()
+                self.text_edits.append(te)
                 self.mode = 'draw'
-                self.pending_text = ''
-                self.label.setPixmap(self._compose())
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -130,6 +165,15 @@ class ScreenshotEditor(QDialog):
         super().mouseReleaseEvent(event)
 
     def _save(self):
+        painter = QPainter(self.overlay)
+        pen = QPen(self.text_color)
+        painter.setPen(pen)
+        for te in self.text_edits:
+            painter.setFont(te.font())
+            pos = te.pos()
+            rect = QRect(pos, te.size())
+            painter.drawText(rect, Qt.AlignLeft | Qt.AlignTop, te.toPlainText())
+        painter.end()
         final = self._compose()
         final.save(str(self.image_path))
         self.accept()
