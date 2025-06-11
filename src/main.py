@@ -96,6 +96,7 @@ class MainWindow(tk.Tk):
             command=self.start_record,
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
         )
         self.record_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
@@ -106,6 +107,7 @@ class MainWindow(tk.Tk):
             state="disabled",
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
         )
         self.stop_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
 
@@ -115,6 +117,7 @@ class MainWindow(tk.Tk):
             command=self.take_shot,
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
@@ -124,6 +127,7 @@ class MainWindow(tk.Tk):
             command=self.open_settings,
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, padx=(0, 1), pady=1
         )
@@ -133,6 +137,7 @@ class MainWindow(tk.Tk):
             command=self.exit_app,
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
         ).pack(
             side="left", fill="both", expand=True, pady=1
         )
