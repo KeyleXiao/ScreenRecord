@@ -2,6 +2,17 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 import time
+import sys
+
+if sys.platform.startswith("win"):
+    try:
+        from ctypes import windll
+        try:
+            windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
 
 from settings import Settings
 from recorder import RecorderThread
