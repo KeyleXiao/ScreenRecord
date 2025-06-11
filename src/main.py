@@ -68,17 +68,37 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.title("Screen Recorder")
         self.settings = Settings.load()
-        self.geometry("500x80")
-        self.record_btn = tk.Button(self, text="开始录制", command=self.start_record)
-        self.record_btn.pack(side="left", padx=5, pady=10)
-        self.stop_btn = tk.Button(self, text="停止", command=self.stop_record, state="disabled")
-        self.stop_btn.pack(side="left", padx=5)
-        tk.Button(self, text="截图", command=self.take_shot).pack(side="left", padx=5)
-        tk.Button(self, text="设置", command=self.open_settings).pack(side="left", padx=5)
-        tk.Button(self, text="退出", command=self.exit_app).pack(side="left", padx=5)
+        self.geometry("520x60")
+
+        top = tk.Frame(self)
+        top.pack(fill="both", expand=True)
+
+        btn_frame = tk.Frame(top)
+        btn_frame.pack(side="left", fill="both", expand=True)
+
+        self.record_btn = tk.Button(
+            btn_frame, text="⏺ 开始录制", command=self.start_record
+        )
+        self.record_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
+
+        self.stop_btn = tk.Button(
+            btn_frame, text="⏹ 停止", command=self.stop_record, state="disabled"
+        )
+        self.stop_btn.pack(side="left", fill="both", expand=True, padx=(0, 1), pady=1)
+
+        tk.Button(btn_frame, text="📸 截图", command=self.take_shot).pack(
+            side="left", fill="both", expand=True, padx=(0, 1), pady=1
+        )
+        tk.Button(btn_frame, text="⚙ 设置", command=self.open_settings).pack(
+            side="left", fill="both", expand=True, padx=(0, 1), pady=1
+        )
+        tk.Button(btn_frame, text="❌ 退出", command=self.exit_app).pack(
+            side="left", fill="both", expand=True, pady=1
+        )
+
         self.timer_var = tk.StringVar(value="00:00")
-        self.timer_label = tk.Label(self, textvariable=self.timer_var)
-        self.timer_label.pack(side="left", padx=5)
+        self.timer_label = tk.Label(top, textvariable=self.timer_var, width=6)
+        self.timer_label.pack(side="right", fill="y", padx=5)
         self.thread: Optional[RecorderThread] = None
         self.overlay: Optional[RecordingOverlay] = None
         self.timer_job = None
