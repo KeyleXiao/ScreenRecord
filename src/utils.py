@@ -23,7 +23,10 @@ class RegionSelector(tk.Toplevel):
 
     def __init__(self, master=None):
         super().__init__(master)
-        self.scaling = float(self.tk.call("tk", "scaling"))
+        # Use raw pixel coordinates. Multiplying by the Tk scaling factor
+        # produced incorrect offsets on high-DPI displays, so we keep the
+        # value at 1.0 to avoid extra scaling.
+        self.scaling = 1.0
         self.withdraw()
         self.overrideredirect(True)
         self.attributes("-fullscreen", True)
